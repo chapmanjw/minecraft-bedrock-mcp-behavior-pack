@@ -1,9 +1,28 @@
-# Bedrock Bridge Behavior Pack
+# Bedrock Bridge Behavior Pack for Minecraft Bedrock MCP Server
 
 A Minecraft **Bedrock Dedicated Server** (BDS) behavior pack that bridges a live world to the
 [`minecraft-bedrock-mcp-server`](https://github.com/chapmanjw/minecraft-bedrock-mcp-server). It is
 the in-game half of that system: it long-polls the bridge for commands, executes them through the
 Bedrock Script API, and reports results and subscribed world events back.
+
+> **New here?** This repository covers only the behavior pack — installing it, configuring it, and
+> building it. For the **full end-to-end setup** — standing up a Bedrock Dedicated Server, creating
+> a compatible world, installing the MCP server, and connecting Claude Desktop — start with the
+> [`minecraft-bedrock-mcp-server` README](https://github.com/chapmanjw/minecraft-bedrock-mcp-server#readme).
+
+## ⚠️ The Bedrock Script API is experimental
+
+This pack is built on Mojang's Bedrock **Script API**, and two of its three modules —
+`@minecraft/server-net` and `@minecraft/server-admin` — are explicitly **beta**. The Script API as
+a whole is an evolving surface that Mojang revises between Minecraft versions. **A Bedrock update
+can change, deprecate, or remove APIs this pack depends on**, and beta modules can be discontinued
+entirely with no stable replacement.
+
+Treat this as experimental software:
+
+- Pin your BDS to a known-good version; do not auto-update the server.
+- Expect to rebuild the pack against new module versions when you do upgrade.
+- Keep the BDS version, this pack's version, and the MCP server's version in lockstep.
 
 ## How it works
 
@@ -33,28 +52,33 @@ The pack:
 ## Requirements
 
 - A Minecraft **Bedrock Dedicated Server**, 1.21.0 or newer.
-- The companion **`minecraft-bedrock-mcp-server`**, running on the same host.
-- The **Beta APIs** experiment enabled on the world — `@minecraft/server-net` and
-  `@minecraft/server-admin` are beta modules.
+- The companion **[`minecraft-bedrock-mcp-server`](https://github.com/chapmanjw/minecraft-bedrock-mcp-server)**,
+  running on the same host.
+- A world with the **Beta APIs** experiment enabled — `@minecraft/server-net` and
+  `@minecraft/server-admin` are beta modules. See the MCP server README for how to create one.
 
 ## Install
 
 Download the latest `bedrock-bridge.mcpack` from the
 [Releases](https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/releases) page, or
-build it yourself (see [Development](#development)). A release artifact contains the
-`manifest.json`, the bundled `scripts/main.js`, and `pack_icon.png`.
+build it yourself (see [Development](#development)). The pack is the folder containing
+`manifest.json`, the bundled `scripts/main.js`, and `pack_icon.png`; an `.mcpack` is simply that
+folder zipped.
 
 ### Activate the pack on a world
 
-1. Unzip the pack into `<bds>/behavior_packs/bedrock-bridge/`.
-2. Add the pack's module UUID and version to the world's `world_behavior_packs.json`:
+1. Place the pack folder at `<world>/behavior_packs/bedrock-bridge/`.
+2. Add the pack's **header UUID** and version to the world's `world_behavior_packs.json`:
 
    ```json
    [{ "pack_id": "fa013817-66f2-4a5f-a724-1347f912bd40", "version": [0, 1, 0] }]
    ```
 
-3. Enable the **Beta APIs** experiment for the world (when creating the world, or via a world
-   editor).
+3. Ensure the world has the **Beta APIs** experiment enabled. This toggle is set when the world is
+   created in the Minecraft client and travels with the world — the dedicated server cannot enable
+   it. See the MCP server README's tutorial for the world-creation steps.
+
+The MCP server is pointed at this same folder through its `BRIDGE_BEHAVIOR_PACK_PATH` variable.
 
 ### `server.properties`
 
@@ -64,9 +88,9 @@ build it yourself (see [Development](#development)). A release artifact contains
 
 ## Configuration
 
-The pack reads two values through the `@minecraft/server-admin` configuration system. Both files
-live in the BDS scripting config directory — `<bds>/config/default/` applies to every pack, and
-`<bds>/config/<module-uuid>/` targets only this one. This repository ships ready-to-copy files
+The pack reads its configuration through the `@minecraft/server-admin` configuration system. The
+files live in the BDS scripting config directory — `<bds>/config/default/` applies to every pack,
+and `<bds>/config/<module-uuid>/` targets only this one. This repository ships ready-to-copy files
 under [`config/default/`](config/default/).
 
 ### `permissions.json`
