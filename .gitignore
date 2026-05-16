@@ -1,0 +1,20 @@
+node_modules/
+coverage/
+*.tsbuildinfo
+
+# Build artifacts. scripts/main.js is committed for releases (see CONTRIBUTING.md);
+# everything else the build emits is not.
+dist/
+*.mcpack
+*.zip
+
+# Local server-admin configuration — never commit real tokens.
+secrets.json
+
+# Per-user Claude Code settings.
+.claude/settings.local.json
+
+# Logs and OS cruft
+*.log
+.DS_Store
+Thumbs.db

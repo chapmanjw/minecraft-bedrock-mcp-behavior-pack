@@ -1,0 +1,5 @@
+# Normalize line endings to LF in the repository on every platform. This keeps
+# the committed bundle (scripts/main.js) byte-stable so CI's drift check passes
+# regardless of the contributor's OS.
+* text=auto eol=lf
+*.png binary

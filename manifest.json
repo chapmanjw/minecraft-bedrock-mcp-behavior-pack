@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Bedrock Bridge",
+    "description": "Bridges this world to the minecraft-bedrock-mcp-server so MCP clients can read and control it.",
+    "uuid": "fa013817-66f2-4a5f-a724-1347f912bd40",
+    "version": [0, 1, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "91087c5e-fcd1-4107-837a-d2930a203bb9",
+      "version": [0, 1, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    { "module_name": "@minecraft/server", "version": "2.6.0" },
+    { "module_name": "@minecraft/server-net", "version": "1.0.0-beta" },
+    { "module_name": "@minecraft/server-admin", "version": "1.0.0-beta" }
+  ],
+  "metadata": {
+    "authors": ["John Chapman"],
+    "license": "MIT",
+    "url": "https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack"
+  }
+}
