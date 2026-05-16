@@ -1916,10 +1916,15 @@ var getTime = (_payload, ctx) => ctx.scheduler.run(() => ({
 var getWeather = (payload, ctx) => {
   const reader = PayloadReader.open(payload, "mc_world_get_weather");
   const dimensionId = reader.string("dimension");
-  return ctx.scheduler.run(() => ({
-    dimension: dimensionId,
-    weather: resolveDimension(ctx.world, dimensionId).getWeather()
-  }));
+  return ctx.scheduler.run(() => {
+    const dimension = resolveDimension(ctx.world, dimensionId);
+    if (typeof dimension.getWeather !== "function") {
+      throw CommandError.unsupported(
+        "reading current weather requires the beta @minecraft/server module; set the @minecraft/server dependency in manifest.json to its beta version"
+      );
+    }
+    return { dimension: dimensionId, weather: dimension.getWeather() };
+  });
 };
 var getDimensions = () => Promise.resolve({ dimensions: [...DIMENSION_IDS] });
 var getDimensionInfo = (payload, ctx) => {

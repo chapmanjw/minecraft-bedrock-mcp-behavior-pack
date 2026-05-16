@@ -50,10 +50,19 @@ const getTime: CommandHandler = (_payload, ctx) =>
 const getWeather: CommandHandler = (payload, ctx) => {
   const reader = PayloadReader.open(payload, "mc_world_get_weather");
   const dimensionId = reader.string("dimension");
-  return ctx.scheduler.run(() => ({
-    dimension: dimensionId,
-    weather: resolveDimension(ctx.world, dimensionId).getWeather(),
-  }));
+  return ctx.scheduler.run(() => {
+    const dimension = resolveDimension(ctx.world, dimensionId);
+    // `Dimension.getWeather` is a pre-release API — present only when the pack
+    // depends on the beta `@minecraft/server` module. Fail with a clear,
+    // coded error rather than a raw "not a function" TypeError.
+    if (typeof dimension.getWeather !== "function") {
+      throw CommandError.unsupported(
+        "reading current weather requires the beta @minecraft/server module; " +
+          "set the @minecraft/server dependency in manifest.json to its beta version",
+      );
+    }
+    return { dimension: dimensionId, weather: dimension.getWeather() };
+  });
 };
 
 const getDimensions: CommandHandler = () => Promise.resolve({ dimensions: [...DIMENSION_IDS] });

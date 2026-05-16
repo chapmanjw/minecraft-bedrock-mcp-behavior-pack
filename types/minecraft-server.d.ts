@@ -293,7 +293,12 @@ declare module "@minecraft/server" {
       explosionOptions?: ExplosionOptions,
     ): boolean;
     setWeather(weatherType: WeatherType, duration?: number): void;
-    getWeather(): WeatherType;
+    /**
+     * Reading the current weather is a pre-release Script API — it exists only
+     * when the pack depends on the beta `@minecraft/server` module. Declared
+     * optional so callers must feature-detect it before use.
+     */
+    getWeather?(): WeatherType;
     runCommand(commandString: string): CommandResult;
   }
 
