@@ -93,16 +93,18 @@ An optional `bridge_log_level` (`error`, `warn`, `info`, `debug`; default `info`
 
 ### `secrets.json` — the bridge token
 
-The bearer token is a credential and must **never** be committed. Copy
+The bridge credential must **never** be committed. Copy
 [`config/default/secrets.json.example`](config/default/secrets.json.example) to `secrets.json` in
-the same directory and set `bridge_agent_token` to the `BRIDGE_AGENT_TOKEN` configured on the MCP
-server:
+the same directory and set `bridge_agent_token` to the **full `Authorization` header value** — the
+word `Bearer`, a space, then the `BRIDGE_AGENT_TOKEN` configured on the MCP server:
 
 ```json
-{ "bridge_agent_token": "the-token-from-the-mcp-server" }
+{ "bridge_agent_token": "Bearer the-token-from-the-mcp-server" }
 ```
 
-The pack loads this token via `secrets.get` and redacts it from all log output.
+`secrets.get` returns an opaque `SecretString`: its value is never exposed to the script and is
+resolved only inside the `Authorization` header at request time. Because the script can neither
+read nor concatenate it, the `Bearer ` scheme prefix must be stored as part of the secret.
 
 ## Bridge protocol
 

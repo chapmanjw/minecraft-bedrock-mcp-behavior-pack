@@ -1,9 +1,9 @@
 /**
  * A small leveled logger over the BDS script `console`.
  *
- * Every line is passed through secret redaction before it is written, so the
- * bridge agent token can never reach the content log even if it is accidentally
- * included in a message or context object.
+ * The bridge agent token never reaches the script environment as a readable
+ * string — `secrets.get` hands back an opaque `SecretString` — so no log line
+ * can leak it, and the logger needs no redaction pass.
  */
 
 export type LogLevel = "error" | "warn" | "info" | "debug";
@@ -23,24 +23,6 @@ export interface Logger {
   debug(message: string, context?: Record<string, unknown>): void;
   /** Derives a logger that prefixes every line with an additional scope. */
   child(scope: string): Logger;
-}
-
-const redactedSecrets = new Set<string>();
-
-/**
- * Registers a secret to redact from all future log output. Short values are
- * ignored — redacting them would corrupt unrelated messages.
- */
-export function redactSecret(secret: string): void {
-  if (secret.length >= 6) redactedSecrets.add(secret);
-}
-
-function redact(text: string): string {
-  let output = text;
-  for (const secret of redactedSecrets) {
-    output = output.split(secret).join("[REDACTED]");
-  }
-  return output;
 }
 
 function formatContext(context: Record<string, unknown> | undefined): string {
@@ -63,7 +45,7 @@ const SINKS: Readonly<Record<LogLevel, (line: string) => void>> = {
 export function createLogger(threshold: LogLevel, scope = "bedrock-bridge"): Logger {
   function emit(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     if (LEVEL_ORDER[level] > LEVEL_ORDER[threshold]) return;
-    const line = redact(`[${scope}] ${level.toUpperCase()} ${message}${formatContext(context)}`);
+    const line = `[${scope}] ${level.toUpperCase()} ${message}${formatContext(context)}`;
     SINKS[level](line);
   }
   return {

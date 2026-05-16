@@ -19,7 +19,7 @@ import { BEHAVIOR_PACK_VERSION } from "./generated/module-versions";
 import { PROTOCOL_VERSION, type HandshakeRequest } from "./protocol";
 import { createResultReporter } from "./result-reporter";
 import { createJobScheduler } from "./runtime/job-scheduler";
-import { createLogger, redactSecret } from "./runtime/logger";
+import { createLogger } from "./runtime/logger";
 import { createSubscriptionManager } from "./subscriptions/subscription-manager";
 import { createHttpTransport } from "./transport/http-transport";
 import { resolveWorldId } from "./world-identity";
@@ -37,7 +37,6 @@ async function main(): Promise<void> {
   }
 
   const logger = createLogger(config.logLevel);
-  redactSecret(config.token);
 
   const scheduler = createJobScheduler(system);
   const capabilities = probeCapabilities(world, logger.child("capabilities"));

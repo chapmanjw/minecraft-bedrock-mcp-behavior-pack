@@ -15,10 +15,16 @@ declare module "@minecraft/server-net" {
     Patch = "Patch",
   }
 
+  /**
+   * A header value: either a literal string, or a `SecretString` whose secret
+   * is resolved into the header at request time without exposing it to script.
+   */
+  export type HeaderValue = string | import("@minecraft/server-admin").SecretString;
+
   export class HttpHeader {
-    constructor(key: string, value: string);
+    constructor(key: string, value: HeaderValue);
     key: string;
-    value: string;
+    value: HeaderValue;
   }
 
   export class HttpRequest {
@@ -29,7 +35,7 @@ declare module "@minecraft/server-net" {
     headers: HttpHeader[];
     /** Request timeout, in seconds. */
     timeout: number;
-    addHeader(key: string, value: string): HttpRequest;
+    addHeader(key: string, value: HeaderValue): HttpRequest;
     setBody(body: string): HttpRequest;
     setHeaders(headers: HttpHeader[]): HttpRequest;
     setMethod(method: HttpRequestMethod): HttpRequest;

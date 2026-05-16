@@ -287,8 +287,8 @@ function readBaseUrl() {
 }
 function readToken() {
   const value = secrets.get(SECRET_AGENT_TOKEN);
-  if (typeof value !== "string" || value.length === 0) {
-    throw new ConfigError(`secrets.json must define a non-empty string '${SECRET_AGENT_TOKEN}'`);
+  if (value === void 0) {
+    throw new ConfigError(`secrets.json must define '${SECRET_AGENT_TOKEN}'`);
   }
   return value;
 }
@@ -2198,17 +2198,6 @@ var LEVEL_ORDER = {
   info: 2,
   debug: 3
 };
-var redactedSecrets = /* @__PURE__ */ new Set();
-function redactSecret(secret) {
-  if (secret.length >= 6) redactedSecrets.add(secret);
-}
-function redact(text) {
-  let output = text;
-  for (const secret of redactedSecrets) {
-    output = output.split(secret).join("[REDACTED]");
-  }
-  return output;
-}
 function formatContext(context) {
   if (context === void 0) return "";
   try {
@@ -2226,7 +2215,7 @@ var SINKS = {
 function createLogger(threshold, scope = "bedrock-bridge") {
   function emit(level, message, context) {
     if (LEVEL_ORDER[level] > LEVEL_ORDER[threshold]) return;
-    const line = redact(`[${scope}] ${level.toUpperCase()} ${message}${formatContext(context)}`);
+    const line = `[${scope}] ${level.toUpperCase()} ${message}${formatContext(context)}`;
     SINKS[level](line);
   }
   return {
@@ -2505,7 +2494,9 @@ function createHttpTransport(config) {
     request.method = method;
     request.timeout = timeoutSeconds;
     request.headers = [
-      new HttpHeader("Authorization", `Bearer ${config.token}`),
+      // The token is an opaque SecretString resolved into the header at send
+      // time; it already carries the `Bearer ` scheme (see config.readToken).
+      new HttpHeader("Authorization", config.token),
       new HttpHeader("Accept", "application/json"),
       ...body === void 0 ? [] : [new HttpHeader("Content-Type", "application/json")]
     ];
@@ -2621,7 +2612,6 @@ async function main() {
     return;
   }
   const logger = createLogger(config.logLevel);
-  redactSecret(config.token);
   const scheduler = createJobScheduler(system);
   const capabilities = probeCapabilities(world, logger.child("capabilities"));
   const transport = createHttpTransport({ baseUrl: config.baseUrl, token: config.token });

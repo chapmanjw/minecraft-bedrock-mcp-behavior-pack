@@ -9,15 +9,18 @@
  * A missing or malformed value throws {@link ConfigError}; the entrypoint logs
  * it and declines to start the poll loop, so BDS surfaces a clear failure.
  */
-import { secrets, variables } from "@minecraft/server-admin";
+import { secrets, variables, type SecretString } from "@minecraft/server-admin";
 import type { LogLevel } from "../runtime/logger";
 
 /** Resolved, validated behavior-pack configuration. */
 export interface BridgeConfig {
   /** Bridge base URL, e.g. `http://localhost:8765`. */
   readonly baseUrl: string;
-  /** The bridge agent bearer token. */
-  readonly token: string;
+  /**
+   * The bridge `Authorization` header value, as an opaque `SecretString`. The
+   * stored secret includes the `Bearer ` scheme prefix — see {@link readToken}.
+   */
+  readonly token: SecretString;
   /** Console log verbosity. */
   readonly logLevel: LogLevel;
 }
@@ -47,10 +50,18 @@ function readBaseUrl(): string {
   return value;
 }
 
-function readToken(): string {
+/**
+ * Reads the bridge credential from `secrets.json`.
+ *
+ * `secrets.get` hands back an opaque {@link SecretString}, never a readable
+ * string — the value is resolved only when the transport passes it as the
+ * `Authorization` header. Because the script cannot concatenate it, the stored
+ * secret must be the *complete* header value, including the `Bearer ` prefix.
+ */
+function readToken(): SecretString {
   const value = secrets.get(SECRET_AGENT_TOKEN);
-  if (typeof value !== "string" || value.length === 0) {
-    throw new ConfigError(`secrets.json must define a non-empty string '${SECRET_AGENT_TOKEN}'`);
+  if (value === undefined) {
+    throw new ConfigError(`secrets.json must define '${SECRET_AGENT_TOKEN}'`);
   }
   return value;
 }

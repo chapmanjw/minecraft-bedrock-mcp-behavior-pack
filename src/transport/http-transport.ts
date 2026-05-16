@@ -7,6 +7,7 @@
  * depends only on the {@link BridgeTransport} interface — so the loop is tested
  * against an in-memory fake with no `server-net` involvement.
  */
+import type { SecretString } from "@minecraft/server-admin";
 import { http, HttpHeader, HttpRequest, HttpRequestMethod } from "@minecraft/server-net";
 import {
   decodeHandshakeResponse,
@@ -37,8 +38,8 @@ export interface BridgeTransport {
 export interface HttpTransportConfig {
   /** Bridge base URL, e.g. `http://localhost:8765`. */
   readonly baseUrl: string;
-  /** The bridge agent bearer token. */
-  readonly token: string;
+  /** The bridge `Authorization` header value, as an opaque `SecretString`. */
+  readonly token: SecretString;
 }
 
 /** Seconds added to the negotiated poll timeout before the socket gives up. */
@@ -63,7 +64,9 @@ export function createHttpTransport(config: HttpTransportConfig): BridgeTranspor
     request.method = method;
     request.timeout = timeoutSeconds;
     request.headers = [
-      new HttpHeader("Authorization", `Bearer ${config.token}`),
+      // The token is an opaque SecretString resolved into the header at send
+      // time; it already carries the `Bearer ` scheme (see config.readToken).
+      new HttpHeader("Authorization", config.token),
       new HttpHeader("Accept", "application/json"),
       ...(body === undefined ? [] : [new HttpHeader("Content-Type", "application/json")]),
     ];
