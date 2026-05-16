@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-16
+
 ### Added
 
 - Bridge protocol module — hand-written types and runtime decoders for the command, result,
@@ -27,4 +29,5 @@ All notable changes to this project are documented in this file. The format is b
 - Vendored `@minecraft/server*` type declarations, an `esbuild` bundle to `scripts/main.js`, and
   a CI workflow.
 
-[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/commits/main
+[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/releases/tag/v0.1.0
