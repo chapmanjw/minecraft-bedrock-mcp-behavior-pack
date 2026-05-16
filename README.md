@@ -1,0 +1,1 @@
+# minecraft-bedrock-mcp-behavior-pack
