@@ -9,6 +9,10 @@ Bedrock Script API, and reports results and subscribed world events back.
 > building it. For the **full end-to-end setup** — standing up a Bedrock Dedicated Server, creating
 > a compatible world, installing the MCP server, and connecting Claude Desktop — start with the
 > [`minecraft-bedrock-mcp-server` README](https://github.com/chapmanjw/minecraft-bedrock-mcp-server#readme).
+> Prefer to be walked through it? The
+> [`minecraft-bedrock-claude-plugin`](https://github.com/chapmanjw/minecraft-bedrock-claude-plugin)
+> turns that setup into a guided experience inside Claude Code and adds agents for building in the
+> world.
 
 ## ⚠️ The Bedrock Script API is experimental
 
