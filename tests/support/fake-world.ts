@@ -73,11 +73,54 @@ class FakeDimension {
   }
 }
 
+/** A fake of a Script API `Structure` — records the permutations set on it. */
+export class FakeStructure {
+  private readonly cells = new Map<string, BlockPermutation>();
+  constructor(
+    readonly id: string,
+    readonly size: Vec,
+  ) {}
+
+  setBlockPermutation(location: Vec, permutation: BlockPermutation): void {
+    this.cells.set(`${location.x},${location.y},${location.z}`, permutation);
+  }
+
+  /** Test helper: the permutation set at a cell, if any. */
+  blockAt(location: Vec): BlockPermutation | undefined {
+    return this.cells.get(`${location.x},${location.y},${location.z}`);
+  }
+
+  /** Test helper: how many cells were set. */
+  get blockCount(): number {
+    return this.cells.size;
+  }
+}
+
+/** A minimal fake of `world.structureManager`, enough for the structure handlers. */
+export class FakeStructureManager {
+  readonly structures = new Map<string, FakeStructure>();
+
+  createEmpty(id: string, size: Vec): FakeStructure {
+    const structure = new FakeStructure(id, size);
+    this.structures.set(id, structure);
+    return structure;
+  }
+
+  get(id: string): FakeStructure | undefined {
+    return this.structures.get(id);
+  }
+
+  getWorldStructureIds(): string[] {
+    return [...this.structures.keys()];
+  }
+}
+
 /** A minimal fake of the Script API `world`. */
 export class FakeWorld {
   private readonly dimensions = new Map<string, FakeDimension>();
   private timeOfDay = 1000;
   readonly messages: (string | object)[] = [];
+  readonly structureManager = new FakeStructureManager();
 
   constructor() {
     for (const id of ["overworld", "nether", "the_end"]) {

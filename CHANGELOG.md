@@ -6,6 +6,23 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-18
+
+Pairs with [`minecraft-bedrock-mcp-server`](https://github.com/chapmanjw/minecraft-bedrock-mcp-server)
+v0.3.0 — install both together.
+
+### Added
+
+- `mc_structure_create_from_blocks` command handler — builds a saved structure from a
+  run-length-encoded block grid. It calls `createEmpty` (world-saved by default) and then
+  `setBlockPermutation` for each non-void cell inside a `runJob` that yields under the
+  script watchdog, so the result is immediately placeable and persists across reloads.
+
+### Removed
+
+- `mc_server_reload_world` command handler. The structure-upload feature it supported now
+  builds structures in the world directly and needs no `/reload all`.
+
 ## [0.2.0] - 2026-05-18
 
 Pairs with [`minecraft-bedrock-mcp-server`](https://github.com/chapmanjw/minecraft-bedrock-mcp-server)
@@ -42,6 +59,7 @@ v0.2.0 — install both together.
 - Vendored `@minecraft/server*` type declarations, an `esbuild` bundle to `scripts/main.js`, and
   a CI workflow.
 
-[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/releases/tag/v0.1.0

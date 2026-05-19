@@ -165,7 +165,7 @@ var MODULE_VERSIONS = {
   "@minecraft/server-net": "1.0.0-beta",
   "@minecraft/server-admin": "1.0.0-beta"
 };
-var BEHAVIOR_PACK_VERSION = "0.2.0";
+var BEHAVIOR_PACK_VERSION = "0.3.0";
 
 // src/capabilities/capability-probe.ts
 function detectFeatures(world2) {
@@ -1714,31 +1714,10 @@ var scoreboardHandlers = {
 var STARTED_AT = Date.now();
 var TPS_SAMPLE_MS = 1e3;
 var TARGET_TPS = 20;
-var RELOAD_DELAY_MS = 1500;
 var reloadAddons = (_payload, ctx) => ctx.scheduler.run(() => {
   const result = ctx.world.getDimension("overworld").runCommand("reload");
   return { reloaded: result.successCount > 0 };
 });
-var reloadWorld = async (_payload, ctx) => {
-  const onlinePlayers = await ctx.scheduler.run(() => {
-    const players = ctx.world.getAllPlayers();
-    if (players.length === 0) {
-      throw CommandError.behaviorPack(
-        "/reload all needs an online player to re-index packs; restart the dedicated server instead",
-        { reason: "no_player_online" }
-      );
-    }
-    return players.length;
-  });
-  void ctx.scheduler.delay(RELOAD_DELAY_MS).then(
-    () => ctx.scheduler.run(() => {
-      const [player] = ctx.world.getAllPlayers();
-      player?.runCommand("reload all");
-    })
-  ).catch(() => {
-  });
-  return { reload_scheduled: true, online_players: onlinePlayers };
-};
 var saveWorld = async (_payload, ctx) => {
   const overworld = () => ctx.world.getDimension("overworld");
   await ctx.scheduler.run(() => overworld().runCommand("save hold"));
@@ -1764,7 +1743,6 @@ var getStatus = async (_payload, ctx) => {
 };
 var serverHandlers = {
   mc_server_reload_addons: reloadAddons,
-  mc_server_reload_world: reloadWorld,
   mc_server_save_world: saveWorld,
   mc_server_get_status: getStatus
 };
@@ -1881,6 +1859,107 @@ var deleteStructure = (payload, ctx) => {
   const id = PayloadReader.open(payload, "mc_structure_delete").string("id");
   return ctx.scheduler.run(() => ({ id, deleted: ctx.world.structureManager.delete(id) }));
 };
+var STRUCTURE_YIELD_INTERVAL = 2048;
+function readPalette(reader) {
+  const raw = reader.raw("palette");
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw CommandError.invalidInput("palette must be a non-empty array");
+  }
+  return raw.map((entry, index) => {
+    if (typeof entry !== "object" || entry === null) {
+      throw CommandError.invalidInput(`palette[${index}] must be an object`);
+    }
+    const record2 = entry;
+    const name = record2["name"];
+    if (typeof name !== "string" || name.length === 0) {
+      throw CommandError.invalidInput(`palette[${index}].name must be a non-empty string`);
+    }
+    const states = record2["states"];
+    if (states !== void 0 && (typeof states !== "object" || states === null)) {
+      throw CommandError.invalidInput(`palette[${index}].states must be an object`);
+    }
+    return { name, states };
+  });
+}
+function readRuns(reader, key) {
+  const raw = reader.raw(key);
+  if (!Array.isArray(raw)) {
+    throw CommandError.invalidInput(`${key} must be an array of [count, index] runs`);
+  }
+  return raw.map((run, position) => {
+    if (!Array.isArray(run) || run.length !== 2 || !Number.isInteger(run[0]) || !Number.isInteger(run[1])) {
+      throw CommandError.invalidInput(`${key}[${position}] must be a [count, index] integer pair`);
+    }
+    return { count: run[0], index: run[1] };
+  });
+}
+function structureVolume(size) {
+  for (const axis of ["x", "y", "z"]) {
+    const extent = size[axis];
+    if (!Number.isInteger(extent) || extent <= 0) {
+      throw CommandError.invalidInput(`size.${axis} must be a positive integer`);
+    }
+  }
+  return size.x * size.y * size.z;
+}
+function expandRuns(runs, volume, paletteSize) {
+  const cells = [];
+  for (const { count, index } of runs) {
+    if (count < 1) {
+      throw CommandError.invalidInput("a block run count must be at least 1");
+    }
+    if (index < -1 || index >= paletteSize) {
+      throw CommandError.invalidInput(
+        `block run index ${index} is outside the range -1..${paletteSize - 1}`
+      );
+    }
+    if (cells.length + count > volume) {
+      throw CommandError.invalidInput(`block runs exceed the ${volume}-cell volume`);
+    }
+    for (let n = 0; n < count; n += 1) cells.push(index);
+  }
+  if (cells.length !== volume) {
+    throw CommandError.invalidInput(`block runs cover ${cells.length} cells, expected ${volume}`);
+  }
+  return cells;
+}
+var createFromBlocks = (payload, ctx) => {
+  const reader = PayloadReader.open(payload, "mc_structure_create_from_blocks");
+  const id = reader.string("id");
+  const size = reader.vector3("size");
+  const palette = readPalette(reader);
+  const runs = readRuns(reader, "blocks");
+  const saveMode = reader.optionalEnum("save_mode", SAVE_MODES);
+  const volume = structureVolume(size);
+  const cells = expandRuns(runs, volume, palette.length);
+  return ctx.scheduler.runJob(function* build() {
+    const permutations = palette.map((entry) => buildBlockPermutation(entry.name, entry.states));
+    const structure = ctx.world.structureManager.createEmpty(
+      id,
+      size,
+      saveMode === void 0 ? StructureSaveMode.World : SAVE_MODE[saveMode]
+    );
+    let placed = 0;
+    let processed = 0;
+    for (let x = 0; x < size.x; x += 1) {
+      for (let y = 0; y < size.y; y += 1) {
+        for (let z = 0; z < size.z; z += 1) {
+          const cell = cells[size.z * size.y * x + size.z * y + z];
+          if (cell !== void 0 && cell >= 0) {
+            const permutation = permutations[cell];
+            if (permutation !== void 0) {
+              structure.setBlockPermutation({ x, y, z }, permutation);
+              placed += 1;
+            }
+          }
+          processed += 1;
+          if (processed % STRUCTURE_YIELD_INTERVAL === 0) yield;
+        }
+      }
+    }
+    return { id: structure.id, size: vec(structure.size), blocks_placed: placed };
+  });
+};
 var setStructureBlock = (payload, ctx) => {
   const reader = PayloadReader.open(payload, "mc_structure_set_block");
   const id = reader.string("id");
@@ -1899,6 +1978,7 @@ var structureHandlers = {
   mc_structure_get: getStructure,
   mc_structure_create_empty: createEmpty,
   mc_structure_create_from_world: createFromWorld,
+  mc_structure_create_from_blocks: createFromBlocks,
   mc_structure_place: placeStructure,
   mc_structure_delete: deleteStructure,
   mc_structure_set_block: setStructureBlock
