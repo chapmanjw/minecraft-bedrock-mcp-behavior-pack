@@ -6,6 +6,19 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-18
+
+Pairs with [`minecraft-bedrock-mcp-server`](https://github.com/chapmanjw/minecraft-bedrock-mcp-server)
+v0.2.0 — install both together.
+
+### Added
+
+- `mc_server_reload_world` command handler — runs `/reload all` to re-index uploaded
+  `.mcstructure` files and rejoin online players. It reports its result first and issues the
+  command a moment later, since `/reload all` reloads the pack's own script context, and fails
+  with a clear error when no player is online to anchor the reload. Brings the command surface
+  to 72 handlers.
+
 ## [0.1.0] - 2026-05-16
 
 ### Added
@@ -29,5 +42,6 @@ All notable changes to this project are documented in this file. The format is b
 - Vendored `@minecraft/server*` type declarations, an `esbuild` bundle to `scripts/main.js`, and
   a CI workflow.
 
-[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/chapmanjw/minecraft-bedrock-mcp-behavior-pack/releases/tag/v0.1.0

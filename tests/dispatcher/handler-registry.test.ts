@@ -5,7 +5,7 @@ describe("buildHandlerRegistry", () => {
   it("assembles exactly the expected number of command kinds", () => {
     const registry = buildHandlerRegistry();
     expect(Object.keys(registry)).toHaveLength(EXPECTED_HANDLER_COUNT);
-    expect(EXPECTED_HANDLER_COUNT).toBe(71);
+    expect(EXPECTED_HANDLER_COUNT).toBe(72);
   });
 
   it("names every kind with the mc_ tool-name prefix", () => {

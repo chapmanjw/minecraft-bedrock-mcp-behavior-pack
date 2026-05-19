@@ -165,7 +165,7 @@ var MODULE_VERSIONS = {
   "@minecraft/server-net": "1.0.0-beta",
   "@minecraft/server-admin": "1.0.0-beta"
 };
-var BEHAVIOR_PACK_VERSION = "0.1.0";
+var BEHAVIOR_PACK_VERSION = "0.2.0";
 
 // src/capabilities/capability-probe.ts
 function detectFeatures(world2) {
@@ -1714,10 +1714,31 @@ var scoreboardHandlers = {
 var STARTED_AT = Date.now();
 var TPS_SAMPLE_MS = 1e3;
 var TARGET_TPS = 20;
+var RELOAD_DELAY_MS = 1500;
 var reloadAddons = (_payload, ctx) => ctx.scheduler.run(() => {
   const result = ctx.world.getDimension("overworld").runCommand("reload");
   return { reloaded: result.successCount > 0 };
 });
+var reloadWorld = async (_payload, ctx) => {
+  const onlinePlayers = await ctx.scheduler.run(() => {
+    const players = ctx.world.getAllPlayers();
+    if (players.length === 0) {
+      throw CommandError.behaviorPack(
+        "/reload all needs an online player to re-index packs; restart the dedicated server instead",
+        { reason: "no_player_online" }
+      );
+    }
+    return players.length;
+  });
+  void ctx.scheduler.delay(RELOAD_DELAY_MS).then(
+    () => ctx.scheduler.run(() => {
+      const [player] = ctx.world.getAllPlayers();
+      player?.runCommand("reload all");
+    })
+  ).catch(() => {
+  });
+  return { reload_scheduled: true, online_players: onlinePlayers };
+};
 var saveWorld = async (_payload, ctx) => {
   const overworld = () => ctx.world.getDimension("overworld");
   await ctx.scheduler.run(() => overworld().runCommand("save hold"));
@@ -1743,6 +1764,7 @@ var getStatus = async (_payload, ctx) => {
 };
 var serverHandlers = {
   mc_server_reload_addons: reloadAddons,
+  mc_server_reload_world: reloadWorld,
   mc_server_save_world: saveWorld,
   mc_server_get_status: getStatus
 };
@@ -2020,7 +2042,7 @@ var worldHandlers = {
 };
 
 // src/dispatcher/handlers/index.ts
-var EXPECTED_HANDLER_COUNT = 71;
+var EXPECTED_HANDLER_COUNT = 72;
 function buildHandlerRegistry() {
   const registry = {
     ...worldHandlers,

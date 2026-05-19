@@ -75,7 +75,7 @@ folder zipped.
 2. Add the pack's **header UUID** and version to the world's `world_behavior_packs.json`:
 
    ```json
-   [{ "pack_id": "fa013817-66f2-4a5f-a724-1347f912bd40", "version": [0, 1, 0] }]
+   [{ "pack_id": "fa013817-66f2-4a5f-a724-1347f912bd40", "version": [0, 2, 0] }]
    ```
 
 3. Ensure the world has the **Beta APIs** experiment enabled. This toggle is set when the world is
@@ -142,11 +142,12 @@ connection, and the pack logs the reason and does not start its poll loop.
 
 ## Command surface
 
-The pack implements **71 command handlers**, grouped by domain — world, blocks, structures,
+The pack implements **72 command handlers**, grouped by domain — world, blocks, structures,
 entities, players, inventory, scoreboard, dynamic properties, effects, event subscriptions, the
 raw-command escape hatch, and server administration. Each `kind` is the name of the MCP tool that
-originated it (e.g. `mc_block_set`). The six `mc_structure_file_*`, `mc_event_poll`, and
-`mc_event_list_subscriptions` tools run on the MCP server itself and never reach the pack.
+originated it (e.g. `mc_block_set`). The seven `mc_structure_file_*`, `mc_structure_upload`,
+`mc_event_poll`, and `mc_event_list_subscriptions` tools run on the MCP server itself and never
+reach the pack.
 
 ## Development
 

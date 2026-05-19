@@ -13,4 +13,4 @@ export const MODULE_VERSIONS: Readonly<Record<string, string>> = {
 };
 
 /** The behavior pack's version, from `manifest.json` header.version. */
-export const BEHAVIOR_PACK_VERSION = "0.1.0";
+export const BEHAVIOR_PACK_VERSION = "0.2.0";

@@ -1,6 +1,6 @@
 {
   "name": "minecraft-bedrock-mcp-behavior-pack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bedrock Dedicated Server behavior pack that bridges a live Minecraft world to the minecraft-bedrock-mcp-server.",
   "keywords": [
     "minecraft",

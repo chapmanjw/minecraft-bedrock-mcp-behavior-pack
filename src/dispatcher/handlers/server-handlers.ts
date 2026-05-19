@@ -1,10 +1,11 @@
 /**
  * Server administration handlers.
  *
- * Covers `mc_server_*`: reloading addons, saving the world, and a status
- * snapshot. Ticks-per-second is derived by sampling `system.currentTick`
- * against wall-clock time across a short interval.
+ * Covers `mc_server_*`: reloading addons, reloading the whole world, saving
+ * the world, and a status snapshot. Ticks-per-second is derived by sampling
+ * `system.currentTick` against wall-clock time across a short interval.
  */
+import { CommandError } from "../../errors/command-error";
 import type { CommandHandler, HandlerMap } from "../command-handler";
 
 /** Captured at module load — a close proxy for the pack's start time. */
@@ -15,11 +16,44 @@ const TPS_SAMPLE_MS = 1_000;
 /** BDS targets this many ticks per second. */
 const TARGET_TPS = 20;
 
+/** Delay before `/reload all` fires, leaving time to report this command's result. */
+const RELOAD_DELAY_MS = 1_500;
+
 const reloadAddons: CommandHandler = (_payload, ctx) =>
   ctx.scheduler.run(() => {
     const result = ctx.world.getDimension("overworld").runCommand("reload");
     return { reloaded: result.successCount > 0 };
   });
+
+const reloadWorld: CommandHandler = async (_payload, ctx) => {
+  const onlinePlayers = await ctx.scheduler.run(() => {
+    const players = ctx.world.getAllPlayers();
+    if (players.length === 0) {
+      throw CommandError.behaviorPack(
+        "/reload all needs an online player to re-index packs; " +
+          "restart the dedicated server instead",
+        { reason: "no_player_online" },
+      );
+    }
+    return players.length;
+  });
+  // `/reload all` reloads behavior and resource packs — re-indexing uploaded
+  // `.mcstructure` files — rejoins every player, and reloads this very script.
+  // Fire it a moment after this command's result has been reported, so the
+  // command settles cleanly before the script context is torn down.
+  void ctx.scheduler
+    .delay(RELOAD_DELAY_MS)
+    .then(() =>
+      ctx.scheduler.run(() => {
+        const [player] = ctx.world.getAllPlayers();
+        player?.runCommand("reload all");
+      }),
+    )
+    .catch(() => {
+      // The world or script context is already tearing down — nothing to do.
+    });
+  return { reload_scheduled: true, online_players: onlinePlayers };
+};
 
 const saveWorld: CommandHandler = async (_payload, ctx) => {
   const overworld = () => ctx.world.getDimension("overworld");
@@ -50,6 +84,7 @@ const getStatus: CommandHandler = async (_payload, ctx) => {
 /** The server-domain handler table. */
 export const serverHandlers: HandlerMap = {
   mc_server_reload_addons: reloadAddons,
+  mc_server_reload_world: reloadWorld,
   mc_server_save_world: saveWorld,
   mc_server_get_status: getStatus,
 };
