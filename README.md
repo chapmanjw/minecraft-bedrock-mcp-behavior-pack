@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/logo.png" width="200" alt="Bedrock Bridge behavior pack logo">
+</p>
+
 # Bedrock Bridge Behavior Pack for Minecraft Bedrock MCP Server
 
 A Minecraft **Bedrock Dedicated Server** (BDS) behavior pack that bridges a live world to the
